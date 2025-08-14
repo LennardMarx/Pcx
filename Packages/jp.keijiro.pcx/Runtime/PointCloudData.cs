@@ -63,7 +63,6 @@ namespace Pcx
 
         #region Editor functions
 
-        #if UNITY_EDITOR
 
         static uint EncodeColor(Color c)
         {
@@ -92,8 +91,6 @@ namespace Pcx
                 };
             }
         }
-
-        #endif
 
         #endregion
     }

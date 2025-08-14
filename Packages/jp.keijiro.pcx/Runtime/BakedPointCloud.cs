@@ -32,7 +32,6 @@ namespace Pcx
 
         #region Editor functions
 
-        #if UNITY_EDITOR
 
         public void Initialize(List<Vector3> positions, List<Color32> colors)
         {
@@ -69,8 +68,6 @@ namespace Pcx
             _positionMap.Apply(false, true);
             _colorMap.Apply(false, true);
         }
-
-        #endif
 
         #endregion
     }

@@ -3,92 +3,24 @@
 
 using UnityEngine;
 using UnityEngine.Rendering;
-using UnityEditor;
-#if UNITY_2020_2_OR_NEWER
-using UnityEditor.AssetImporters;
-#else
-using UnityEditor.Experimental.AssetImporters;
-#endif
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Pcx
 {
-    [ScriptedImporter(1, "ply")]
-    public class PlyImporter : ScriptedImporter
+
+    public class PlyImporterRuntime : MonoBehaviour
     {
         #region ScriptedImporter implementation
 
         public enum ContainerType { Mesh, ComputeBuffer, Texture  }
+        public Material defaultMaterial;
 
         [SerializeField] ContainerType _containerType = ContainerType.Mesh;
-
-        public override void OnImportAsset(AssetImportContext context)
-        {
-            if (_containerType == ContainerType.Mesh)
-            {
-                // Mesh container
-                // Create a prefab with MeshFilter/MeshRenderer.
-                var gameObject = new GameObject();
-                var mesh = ImportAsMesh(context.assetPath);
-
-                var meshFilter = gameObject.AddComponent<MeshFilter>();
-                meshFilter.sharedMesh = mesh;
-
-                var meshRenderer = gameObject.AddComponent<MeshRenderer>();
-                meshRenderer.sharedMaterial = GetDefaultMaterial();
-
-                context.AddObjectToAsset("prefab", gameObject);
-                if (mesh != null) context.AddObjectToAsset("mesh", mesh);
-
-                context.SetMainObject(gameObject);
-            }
-            else if (_containerType == ContainerType.ComputeBuffer)
-            {
-                // ComputeBuffer container
-                // Create a prefab with PointCloudRenderer.
-                var gameObject = new GameObject();
-                var data = ImportAsPointCloudData(context.assetPath);
-
-                var renderer = gameObject.AddComponent<PointCloudRenderer>();
-                renderer.sourceData = data;
-
-                context.AddObjectToAsset("prefab", gameObject);
-                if (data != null) context.AddObjectToAsset("data", data);
-
-                context.SetMainObject(gameObject);
-            }
-            else // _containerType == ContainerType.Texture
-            {
-                // Texture container
-                // No prefab is available for this type.
-                var data = ImportAsBakedPointCloud(context.assetPath);
-                if (data != null)
-                {
-                    context.AddObjectToAsset("container", data);
-                    context.AddObjectToAsset("position", data.positionMap);
-                    context.AddObjectToAsset("color", data.colorMap);
-                    context.SetMainObject(data);
-                }
-            }
-        }
-
-        #endregion
-
-        #region Internal utilities
-
-        static Material GetDefaultMaterial()
-        {
-            // Via package manager
-            var path_upm = "Packages/jp.keijiro.pcx/Editor/Default Point.mat";
-            // Via project asset database
-            var path_prj = "Assets/Pcx/Editor/Default Point.mat";
-            return AssetDatabase.LoadAssetAtPath<Material>(path_upm) ??
-                   AssetDatabase.LoadAssetAtPath<Material>(path_prj);
-        }
 
         #endregion
 
@@ -168,6 +100,8 @@ namespace Pcx
                 var header = ReadDataHeader(new StreamReader(stream));
                 var body = ReadDataBody(header, new BinaryReader(stream));
 
+
+
                 var mesh = new Mesh();
                 mesh.name = Path.GetFileNameWithoutExtension(path);
 
@@ -192,7 +126,53 @@ namespace Pcx
             }
         }
 
-        PointCloudData ImportAsPointCloudData(string path)
+
+        public async Task<Mesh> ImportAsMeshAsync(string path)
+        {
+            try
+            {
+                DataHeader header = null;
+                DataBody body = null;
+                Mesh mesh;
+                await System.Threading.Tasks.Task.Run(() =>
+                {
+                    var stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                    header = ReadDataHeader(new StreamReader(stream));
+                    body = ReadDataBody(header, new BinaryReader(stream));
+
+
+
+
+                });
+
+
+
+                mesh = new Mesh();
+                mesh.name = Path.GetFileNameWithoutExtension(path);
+
+                mesh.indexFormat = header.vertexCount > 65535 ?
+                    IndexFormat.UInt32 : IndexFormat.UInt16;
+
+                mesh.SetVertices(body.vertices);
+                mesh.SetColors(body.colors);
+
+                mesh.SetIndices(
+                    Enumerable.Range(0, header.vertexCount).ToArray(),
+                    MeshTopology.Points, 0
+                );
+                mesh.UploadMeshData(true);
+
+                    return mesh;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("Failed importing " + path + ". " + e.Message);
+                throw;
+                return null;
+            }
+        }
+
+public PointCloudData ImportAsPointCloudData(string path)
         {
             try
             {
@@ -211,7 +191,7 @@ namespace Pcx
             }
         }
 
-        BakedPointCloud ImportAsBakedPointCloud(string path)
+        public BakedPointCloud ImportAsBakedPointCloud(string path)
         {
             try
             {
