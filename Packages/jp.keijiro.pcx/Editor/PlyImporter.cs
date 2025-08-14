@@ -18,11 +18,11 @@ using System.Linq;
 namespace Pcx
 {
     [ScriptedImporter(1, "ply")]
-    class PlyImporter : ScriptedImporter
+    public class PlyImporter : ScriptedImporter
     {
         #region ScriptedImporter implementation
 
-        public enum ContainerType { Mesh, ComputeBuffer, Texture  }
+        public enum ContainerType { Mesh, ComputeBuffer, Texture }
 
         [SerializeField] ContainerType _containerType = ContainerType.Mesh;
 
@@ -94,7 +94,8 @@ namespace Pcx
 
         #region Internal data structure
 
-        enum DataProperty {
+        enum DataProperty
+        {
             Invalid,
             R8, G8, B8, A8,
             R16, G16, B16, A16,
@@ -160,7 +161,7 @@ namespace Pcx
 
         #region Reader implementation
 
-        Mesh ImportAsMesh(string path)
+        public Mesh ImportAsMesh(string path)
         {
             try
             {
@@ -192,7 +193,7 @@ namespace Pcx
             }
         }
 
-        PointCloudData ImportAsPointCloudData(string path)
+        public PointCloudData ImportAsPointCloudData(string path)
         {
             try
             {
@@ -211,7 +212,7 @@ namespace Pcx
             }
         }
 
-        BakedPointCloud ImportAsBakedPointCloud(string path)
+        public BakedPointCloud ImportAsBakedPointCloud(string path)
         {
             try
             {
@@ -250,7 +251,7 @@ namespace Pcx
                     "Should be binary/little endian.");
 
             // Read header contents.
-            for (var skip = false;;)
+            for (var skip = false; ;)
             {
                 // Read a line and split it with white space.
                 line = reader.ReadLine();
@@ -283,13 +284,13 @@ namespace Pcx
                     // Parse the property name entry.
                     switch (col[2])
                     {
-                        case "red"  : prop = DataProperty.R8; break;
+                        case "red": prop = DataProperty.R8; break;
                         case "green": prop = DataProperty.G8; break;
-                        case "blue" : prop = DataProperty.B8; break;
+                        case "blue": prop = DataProperty.B8; break;
                         case "alpha": prop = DataProperty.A8; break;
-                        case "x"    : prop = DataProperty.SingleX; break;
-                        case "y"    : prop = DataProperty.SingleY; break;
-                        case "z"    : prop = DataProperty.SingleZ; break;
+                        case "x": prop = DataProperty.SingleX; break;
+                        case "y": prop = DataProperty.SingleY; break;
+                        case "z": prop = DataProperty.SingleZ; break;
                     }
 
                     // Check the property type.
@@ -315,7 +316,7 @@ namespace Pcx
                         if (GetPropertySize(prop) != 2)
                             throw new ArgumentException("Invalid property type ('" + line + "').");
                     }
-                    else if (col[1] == "int"   || col[1] == "uint"   || col[1] == "float" ||
+                    else if (col[1] == "int" || col[1] == "uint" || col[1] == "float" ||
                              col[1] == "int32" || col[1] == "uint32" || col[1] == "float32")
                     {
                         if (prop == DataProperty.Invalid)
@@ -323,7 +324,7 @@ namespace Pcx
                         else if (GetPropertySize(prop) != 4)
                             throw new ArgumentException("Invalid property type ('" + line + "').");
                     }
-                    else if (col[1] == "int64"  || col[1] == "uint64" ||
+                    else if (col[1] == "int64" || col[1] == "uint64" ||
                              col[1] == "double" || col[1] == "float64")
                     {
                         switch (prop)
